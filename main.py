@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-
 app = FastAPI()
-
 class VotoSchema(BaseModel):
     nombre: str
     apellido: str
@@ -13,11 +11,9 @@ class VotoSchema(BaseModel):
     numero_telefonico: str
     candidato: str
     edad: int
-
 @app.post("/voto")
 def registrar_voto(voto: VotoSchema):
-    return {"mensaje": "Voto registrado correctamente", "datos": voto}
-
+    return {"mensaje": "Voto registrado correctamente"}
 @app.get("/api/v1/salud")
 def check_salud():
     return {"status": "conectado"}
