@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Definimos el modelo de datos
 class VotoSchema(BaseModel):
     nombre: str
     apellido: str
@@ -17,7 +16,6 @@ class VotoSchema(BaseModel):
 
 @app.post("/voto")
 def registrar_voto(voto: VotoSchema):
-    # Por ahora solo devolvemos los datos para confirmar que llegan bien
     return {"mensaje": "Voto registrado correctamente", "datos": voto}
 
 @app.get("/api/v1/salud")
