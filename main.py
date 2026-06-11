@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Column, Integer, String, inspect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -9,6 +10,15 @@ import models
 from models import Usuario
 
 app = FastAPI()
+
+# --- Configuración de CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permite peticiones desde cualquier origen
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- Modelos de Base de Datos ---
 class VotoDB(Base):
