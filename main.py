@@ -22,7 +22,7 @@ class VotoDB(Base):
     edad = Column(Integer)
 
 # Crear tablas al iniciar
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 # Esquema para validación de datos
 class VotoSchema(BaseModel):
