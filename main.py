@@ -57,7 +57,11 @@ def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
 
 @app.get("/ver-votos")
 def listar_votos(db: Session = Depends(get_db)):
-    return db.query(VotoDB).all()
+    # Ejecutamos un rollback previo para limpiar cualquier transacción pendiente
+    db.rollback()
+    # Consultamos explícitamente
+    votos = db.query(VotoDB).all()
+    return votos
 
 @app.get("/debug-tablas")
 def debug_tablas():
