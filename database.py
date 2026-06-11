@@ -5,16 +5,16 @@ import os
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-# CAMBIO: Agregamos parámetros de conexión más robustos para Render
+# Si la URL no tiene ?sslmode=require al final, añádelo en las variables de entorno de Render
+# Engine más robusto
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={
-        "sslmode": "require",
-        "connect_timeout": 10 # Añadimos un tiempo de espera
+        "sslmode": "require"
     },
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=0
+    pool_pre_ping=True,      # Verifica conexión antes de usarla
+    pool_recycle=300,        # Recicla conexiones cada 5 min para evitar que se cierren
+    pool_timeout=30          # Aumenta el tiempo de espera de conexión
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
