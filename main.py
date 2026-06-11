@@ -53,3 +53,7 @@ def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
 @app.get("/api/v1/salud")
 def check_salud():
     return {"status": "conectado"}
+@app.get("/ver-votos")
+def listar_votos(db: Session = Depends(get_db)):
+    votos = db.query(VotoDB).all()
+    return votos
