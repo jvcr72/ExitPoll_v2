@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
 import os
-import models
+import models # Asegúrate de que models.py tenga las clases Usuario y CentroVotacion
+
 app = FastAPI()
 
-# Modelo de la tabla
+# Modelo de la tabla Votos
 class VotoDB(Base):
     __tablename__ = "votos"
     id = Column(Integer, primary_key=True, index=True)
@@ -21,9 +22,6 @@ class VotoDB(Base):
     candidato = Column(String)
     edad = Column(Integer)
 
-# Crear tablas al iniciar
-# Base.metadata.create_all(bind=engine)
-
 # Esquema para validación de datos
 class VotoSchema(BaseModel):
     nombre: str
@@ -36,6 +34,7 @@ class VotoSchema(BaseModel):
     candidato: str
     edad: int
 
+# Dependencia para la base de datos
 def get_db():
     db = SessionLocal()
     try:
@@ -46,7 +45,7 @@ def get_db():
 @app.post("/voto")
 def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
     try:
-        nuevo_voto = VotoDB(**voto.dict())
+        nuevo_voto = VotoDB(**voto.model_dump()) # Usamos model_dump() en lugar de dict() para versiones recientes de Pydantic
         db.add(nuevo_voto)
         db.commit()
         db.refresh(nuevo_voto)
@@ -57,9 +56,7 @@ def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
 
 @app.get("/ver-votos")
 def listar_votos(db: Session = Depends(get_db)):
-    # Ejecutamos un rollback previo para limpiar cualquier transacción pendiente
     db.rollback()
-    # Consultamos explícitamente
     votos = db.query(VotoDB).all()
     return votos
 
