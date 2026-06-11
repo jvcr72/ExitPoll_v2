@@ -1,14 +1,15 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy import Column, Integer, String, inspect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
-import os
-import models # Asegúrate de que models.py tenga las clases Usuario y CentroVotacion
+from auth import hash_password, verify_password, create_access_token
+import models 
+from models import Usuario
 
 app = FastAPI()
 
-# Modelo de la tabla Votos
+# --- Modelos de Base de Datos ---
 class VotoDB(Base):
     __tablename__ = "votos"
     id = Column(Integer, primary_key=True, index=True)
@@ -22,7 +23,7 @@ class VotoDB(Base):
     candidato = Column(String)
     edad = Column(Integer)
 
-# Esquema para validación de datos
+# --- Esquemas Pydantic ---
 class VotoSchema(BaseModel):
     nombre: str
     apellido: str
@@ -34,7 +35,11 @@ class VotoSchema(BaseModel):
     candidato: str
     edad: int
 
-# Dependencia para la base de datos
+class UserSchema(BaseModel):
+    username: str
+    password: str
+
+# --- Dependencia de DB ---
 def get_db():
     db = SessionLocal()
     try:
@@ -42,10 +47,33 @@ def get_db():
     finally:
         db.close()
 
+# --- Endpoints de Autenticación ---
+@app.post("/register")
+def register(user: UserSchema, db: Session = Depends(get_db)):
+    db_user = db.query(Usuario).filter(Usuario.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    
+    hashed = hash_password(user.password)
+    nuevo_usuario = Usuario(username=user.username, password=hashed)
+    db.add(nuevo_usuario)
+    db.commit()
+    return {"mensaje": "Usuario registrado exitosamente"}
+
+@app.post("/login")
+def login(user: UserSchema, db: Session = Depends(get_db)):
+    db_user = db.query(Usuario).filter(Usuario.username == user.username).first()
+    if not db_user or not verify_password(user.password, db_user.password):
+        raise HTTPException(status_code=400, detail="Credenciales incorrectas")
+    
+    token = create_access_token({"sub": db_user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+# --- Endpoints de Votos ---
 @app.post("/voto")
 def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
     try:
-        nuevo_voto = VotoDB(**voto.model_dump()) # Usamos model_dump() en lugar de dict() para versiones recientes de Pydantic
+        nuevo_voto = VotoDB(**voto.model_dump())
         db.add(nuevo_voto)
         db.commit()
         db.refresh(nuevo_voto)
@@ -60,6 +88,7 @@ def listar_votos(db: Session = Depends(get_db)):
     votos = db.query(VotoDB).all()
     return votos
 
+# --- Utilidades ---
 @app.get("/debug-tablas")
 def debug_tablas():
     inspector = inspect(engine)
