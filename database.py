@@ -1,21 +1,20 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# Tu variable de entorno debe estar configurada en Render como DATABASE_URL
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Corrección de protocolo
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Configuración del engine con manejo de SSL para Render
-# El parámetro connect_args={"sslmode": "require"} es obligatorio para evitar errores de conexión SSL
+# Configuramos el motor con parámetros de resiliencia y seguridad SSL
 engine = create_engine(
-    DATABASE_URL, 
-    pool_pre_ping=True,
-    connect_args={"sslmode": "require"}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"sslmode": "require"}, # Obligatorio para conexiones seguras en Render
+    pool_pre_ping=True                   # Verifica que la conexión esté viva antes de cada consulta
 )
 
+# Creamos la sesión de base de datos
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Base para los modelos
 Base = declarative_base()
