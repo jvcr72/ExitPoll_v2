@@ -4,17 +4,16 @@ from sqlalchemy import Column, Integer, String, inspect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
-# Importamos la función de protección de auth.py
 from auth import hash_password, verify_password, create_access_token, get_current_user
 import models 
 from models import Usuario
 
 app = FastAPI()
 
-# --- Configuración de CORS ---
+# --- Configuración de CORS (Prioridad Alta) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Permite peticiones desde cualquier origen
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,13 +57,12 @@ def get_db():
     finally:
         db.close()
 
-# --- Endpoints de Autenticación ---
+# --- Endpoints ---
 @app.post("/register")
 def register(user: UserSchema, db: Session = Depends(get_db)):
     db_user = db.query(Usuario).filter(Usuario.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="El usuario ya existe")
-    
     hashed = hash_password(user.password)
     nuevo_usuario = Usuario(username=user.username, password=hashed)
     db.add(nuevo_usuario)
@@ -76,16 +74,14 @@ def login(user: UserSchema, db: Session = Depends(get_db)):
     db_user = db.query(Usuario).filter(Usuario.username == user.username).first()
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Credenciales incorrectas")
-    
     token = create_access_token({"sub": db_user.username})
     return {"access_token": token, "token_type": "bearer"}
 
-# --- Endpoints de Votos (PROTEGIDO) ---
 @app.post("/voto")
 def registrar_voto(
     voto: VotoSchema, 
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user) # Requiere token válido
+    current_user: str = Depends(get_current_user)
 ):
     try:
         nuevo_voto = VotoDB(**voto.model_dump())
@@ -95,19 +91,13 @@ def registrar_voto(
         return {"mensaje": f"Voto registrado por {current_user}", "id": nuevo_voto.id}
     except Exception as e:
         db.rollback()
-        return {"error": str(e)}
+        # Esto te permitirá ver el error real en los logs de Render
+        print(f"Error al registrar voto: {str(e)}") 
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/ver-votos")
 def listar_votos(db: Session = Depends(get_db)):
-    db.rollback()
-    votos = db.query(VotoDB).all()
-    return votos
-
-# --- Utilidades ---
-@app.get("/debug-tablas")
-def debug_tablas():
-    inspector = inspect(engine)
-    return {"tablas_encontradas": inspector.get_table_names()}
+    return db.query(VotoDB).all()
 
 @app.get("/api/v1/salud")
 def check_salud():
