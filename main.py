@@ -101,4 +101,4 @@ def listar_votos(db: Session = Depends(get_db)):
 
 @app.get("/api/v1/salud")
 def check_salud():
-    return {"status": "conectado"}
+return {"status": "conectado-v2"}
