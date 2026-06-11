@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Depends
-from sqlalchemy import Column, Integer, String
-from database import Base, engine, SessionLocal
+from sqlalchemy import Column, Integer, String, inspect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from database import Base, engine, SessionLocal
+import os
 
 app = FastAPI()
 
-# Definir el modelo de la tabla para que se cree en PostgreSQL
+# Modelo de la tabla
 class VotoDB(Base):
     __tablename__ = "votos"
     id = Column(Integer, primary_key=True, index=True)
@@ -20,9 +21,10 @@ class VotoDB(Base):
     candidato = Column(String)
     edad = Column(Integer)
 
-# Esto crea la tabla "votos" en tu base de datos automáticamente
+# Crear tablas al iniciar
 Base.metadata.create_all(bind=engine)
 
+# Esquema para validación de datos
 class VotoSchema(BaseModel):
     nombre: str
     apellido: str
@@ -48,15 +50,20 @@ def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
         db.add(nuevo_voto)
         db.commit()
         db.refresh(nuevo_voto)
-        return {"mensaje": "Voto registrado correctamente", "id_asignado": nuevo_voto.id}
+        return {"mensaje": "Voto registrado correctamente", "id": nuevo_voto.id}
     except Exception as e:
         db.rollback()
-        return {"error_detallado": str(e)}
+        return {"error": str(e)}
+
+@app.get("/ver-votos")
+def listar_votos(db: Session = Depends(get_db)):
+    return db.query(VotoDB).all()
+
+@app.get("/debug-tablas")
+def debug_tablas():
+    inspector = inspect(engine)
+    return {"tablas_encontradas": inspector.get_table_names()}
 
 @app.get("/api/v1/salud")
 def check_salud():
     return {"status": "conectado"}
-@app.get("/ver-votos")
-def listar_votos(db: Session = Depends(get_db)):
-    votos = db.query(VotoDB).all()
-    return votos
