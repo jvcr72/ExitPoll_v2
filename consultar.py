@@ -1,5 +1,10 @@
 import requests
-# Cambia esta URL por la tuya de Render
-URL = "https://exitpoll-v2-produccion.onrender.com/ver-votos"
-respuesta = requests.get(URL)
-print(respuesta.json())
+
+URL = "https://exitpoll-v2-produccion.onrender.com/ver-votos" 
+
+try:
+    respuesta = requests.get(URL)
+    print("Estado de la respuesta:", respuesta.status_code)
+    print("Datos recibidos:", respuesta.json())
+except Exception as e:
+    print("Ocurrió un error:", e)
