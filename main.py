@@ -43,12 +43,15 @@ def get_db():
 
 @app.post("/voto")
 def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
-    # Crear un objeto de base de datos con los datos recibidos
-    nuevo_voto = VotoDB(**voto.dict())
-    db.add(nuevo_voto)
-    db.commit()
-    db.refresh(nuevo_voto)
-    return {"mensaje": "Voto registrado correctamente en la base de datos"}
+    try:
+        nuevo_voto = VotoDB(**voto.dict())
+        db.add(nuevo_voto)
+        db.commit()
+        db.refresh(nuevo_voto)
+        return {"mensaje": "Voto registrado correctamente", "id_asignado": nuevo_voto.id}
+    except Exception as e:
+        db.rollback()
+        return {"error_detallado": str(e)}
 
 @app.get("/api/v1/salud")
 def check_salud():
