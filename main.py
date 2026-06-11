@@ -3,7 +3,8 @@ from sqlalchemy import Column, Integer, String, inspect
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
-from auth import hash_password, verify_password, create_access_token
+# Importamos la función de protección de auth.py
+from auth import hash_password, verify_password, create_access_token, get_current_user
 import models 
 from models import Usuario
 
@@ -69,15 +70,19 @@ def login(user: UserSchema, db: Session = Depends(get_db)):
     token = create_access_token({"sub": db_user.username})
     return {"access_token": token, "token_type": "bearer"}
 
-# --- Endpoints de Votos ---
+# --- Endpoints de Votos (PROTEGIDO) ---
 @app.post("/voto")
-def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
+def registrar_voto(
+    voto: VotoSchema, 
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user) # Requiere token válido
+):
     try:
         nuevo_voto = VotoDB(**voto.model_dump())
         db.add(nuevo_voto)
         db.commit()
         db.refresh(nuevo_voto)
-        return {"mensaje": "Voto registrado correctamente", "id": nuevo_voto.id}
+        return {"mensaje": f"Voto registrado por {current_user}", "id": nuevo_voto.id}
     except Exception as e:
         db.rollback()
         return {"error": str(e)}
