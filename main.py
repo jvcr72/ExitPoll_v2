@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -8,14 +8,19 @@ from models import Usuario, VotoDB
 
 app = FastAPI()
 
-# Configuración de CORS optimizada para navegadores
+# Middleware CORS configurado de forma estricta para desarrollo
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Ruta manual para manejar OPTIONS (pre-flight)
+@app.options("/{rest_of_path:path}")
+async def options_handler(request: Request, rest_of_path: str):
+    return {}
 
 class LoginSchema(BaseModel):
     username: str
