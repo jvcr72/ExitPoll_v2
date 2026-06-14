@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import SessionLocal
@@ -7,20 +7,6 @@ from auth import verify_password, create_access_token, get_current_user
 from models import Usuario, VotoDB
 
 app = FastAPI()
-
-# Middleware CORS configurado de forma estricta para desarrollo
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Ruta manual para manejar OPTIONS (pre-flight)
-@app.options("/{rest_of_path:path}")
-async def options_handler(request: Request, rest_of_path: str):
-    return {}
 
 class LoginSchema(BaseModel):
     username: str
@@ -44,9 +30,10 @@ def get_db():
     finally:
         db.close()
 
+# Servir el frontend
 @app.get("/")
 def read_root():
-    return {"mensaje": "Servidor ExitPoll activo"}
+    return FileResponse("index.html")
 
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
