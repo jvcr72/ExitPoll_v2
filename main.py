@@ -8,6 +8,7 @@ from models import Usuario, VotoDB
 
 app = FastAPI()
 
+# Configuración completa de CORS para permitir conexiones externas
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,7 +39,6 @@ def get_db():
     finally:
         db.close()
 
-# RUTA RAÍZ (Para evitar el 404 al abrir el dominio)
 @app.get("/")
 def read_root():
     return {"mensaje": "Servidor ExitPoll activo"}
