@@ -4,33 +4,23 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import engine, SessionLocal, Base
 from auth import hash_password, verify_password, create_access_token, get_current_user
-from models import Usuario, VotoDB
+# Aquí importamos ambos desde models
+from models import Usuario, VotoDB 
 
-# IMPORTANTE: Crear tablas fuera de la ejecución de rutas, pero protegidas
+# Inicialización segura
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:
-    print(f"Error al crear tablas: {e}")
+    print(f"Error al inicializar tablas: {e}")
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# ... (resto de tu configuración de CORS y rutas) ...
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.get("/api/v1/salud")
-def check_salud():
-    return {"status": "conectado-v2"}
-
-# ... resto de tus rutas ...
+@app.post("/voto")
+def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+    # Esto funcionará porque VotoDB viene de models.py
+    nuevo_voto = VotoDB(**voto.model_dump())
+    db.add(nuevo_voto)
+    db.commit()
+    return {"mensaje": "Voto registrado"}
