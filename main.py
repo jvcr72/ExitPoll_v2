@@ -2,9 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database import SessionLocal
-from auth import verify_password, create_access_token, get_current_user
+from database import SessionLocal, engine, Base
+from auth import verify_password, create_access_token, get_current_user, get_password_hash
 from models import Usuario, VotoDB
+
+# Crear las tablas desde cero
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -30,21 +33,22 @@ def get_db():
     finally:
         db.close()
 
+# Ruta para eliminar todo y crear usuario nuevo
+@app.get("/reset-admin")
+def reset_admin(db: Session = Depends(get_db)):
+    # Eliminar datos existentes
+    db.query(Usuario).delete()
+    db.commit()
+    
+    # Crear usuario nuevo
+    nuevo_user = Usuario(username="admin", password=get_password_hash("123456"))
+    db.add(nuevo_user)
+    db.commit()
+    return {"mensaje": "Base de datos reseteada. Usuario: admin, Password: 123456"}
+
 @app.get("/")
 def read_root():
     return FileResponse("index.html")
-
-@app.get("/ver-usuarios")
-def ver_usuarios(db: Session = Depends(get_db)):
-    try:
-        usuarios = db.query(Usuario).all()
-        return [{"username": u.username} for u in usuarios]
-    except Exception as e:
-        return {"error_detallado": str(e)}
-
-@app.get("/api/v1/salud")
-def check_salud():
-    return {"status": "conectado"}
 
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
