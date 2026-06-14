@@ -8,7 +8,6 @@ from models import Usuario, VotoDB
 
 app = FastAPI()
 
-# Esquemas
 class LoginSchema(BaseModel):
     username: str
     password: str
@@ -24,7 +23,6 @@ class VotoSchema(BaseModel):
     candidato: str
     edad: int
 
-# Dependencia DB
 def get_db():
     db = SessionLocal()
     try:
@@ -32,26 +30,22 @@ def get_db():
     finally:
         db.close()
 
-# 1. GET para el Frontend
 @app.get("/")
 def read_root():
     return FileResponse("index.html")
 
-# 2. GET para el diagnóstico de usuarios
 @app.get("/ver-usuarios")
 def ver_usuarios(db: Session = Depends(get_db)):
     try:
         usuarios = db.query(Usuario).all()
         return [{"username": u.username} for u in usuarios]
     except Exception as e:
-        return {"error": str(e)}
+        return {"error_detallado": str(e)}
 
-# 3. GET para salud del sistema
 @app.get("/api/v1/salud")
 def check_salud():
     return {"status": "conectado"}
 
-# Rutas POST
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
