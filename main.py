@@ -38,6 +38,11 @@ def get_db():
     finally:
         db.close()
 
+# RUTA RAÍZ (Para evitar el 404 al abrir el dominio)
+@app.get("/")
+def read_root():
+    return {"mensaje": "Servidor ExitPoll activo"}
+
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
