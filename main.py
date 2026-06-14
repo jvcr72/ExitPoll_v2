@@ -30,7 +30,12 @@ def get_db():
     finally:
         db.close()
 
-# Servir el frontend
+# Ruta para listar los usuarios registrados
+@app.get("/ver-usuarios")
+def ver_usuarios(db: Session = Depends(get_db)):
+    usuarios = db.query(Usuario).all()
+    return [{"username": u.username} for u in usuarios]
+
 @app.get("/")
 def read_root():
     return FileResponse("index.html")
