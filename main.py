@@ -51,7 +51,7 @@ def ver_usuarios(db: Session = Depends(get_db)):
 def check_salud():
     return {"status": "conectado"}
 
-# Rutas POST (necesarias para el flujo completo)
+# Rutas POST
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
