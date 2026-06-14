@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -8,6 +8,7 @@ from models import Usuario, VotoDB
 
 app = FastAPI()
 
+# Esquemas
 class LoginSchema(BaseModel):
     username: str
     password: str
@@ -23,6 +24,7 @@ class VotoSchema(BaseModel):
     candidato: str
     edad: int
 
+# Dependencia DB
 def get_db():
     db = SessionLocal()
     try:
@@ -30,16 +32,26 @@ def get_db():
     finally:
         db.close()
 
-# Ruta para listar los usuarios registrados
-@app.get("/ver-usuarios")
-def ver_usuarios(db: Session = Depends(get_db)):
-    usuarios = db.query(Usuario).all()
-    return [{"username": u.username} for u in usuarios]
-
+# 1. GET para el Frontend
 @app.get("/")
 def read_root():
     return FileResponse("index.html")
 
+# 2. GET para el diagnóstico de usuarios
+@app.get("/ver-usuarios")
+def ver_usuarios(db: Session = Depends(get_db)):
+    try:
+        usuarios = db.query(Usuario).all()
+        return [{"username": u.username} for u in usuarios]
+    except Exception as e:
+        return {"error": str(e)}
+
+# 3. GET para salud del sistema
+@app.get("/api/v1/salud")
+def check_salud():
+    return {"status": "conectado"}
+
+# Rutas POST (necesarias para el flujo completo)
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
@@ -54,7 +66,3 @@ def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db), current_user
     db.add(nuevo_voto)
     db.commit()
     return {"mensaje": "Voto registrado con éxito"}
-
-@app.get("/api/v1/salud")
-def check_salud():
-    return {"status": "conectado"}
