@@ -2,45 +2,93 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de Votación</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Votos ExitPoll</title>
 </head>
 <body>
-    <h2>Login</h2>
-    <input type="text" id="user" placeholder="Usuario">
-    <input type="password" id="pass" placeholder="Contraseña">
-    <button onclick="login()">Entrar</button>
 
-    <hr>
+    <h2>1. Iniciar Sesión</h2>
+    <input type="text" id="username" placeholder="Usuario">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button onclick="obtenerToken()">Obtener Token</button>
+    <p id="status-login"></p>
 
-    <h2>Registrar Voto (Requiere Login)</h2>
+    <h2>2. Registrar Voto</h2>
     <input type="text" id="nombre" placeholder="Nombre">
+    <input type="text" id="apellido" placeholder="Apellido">
+    <input type="text" id="cedula" placeholder="Cédula">
+    <input type="text" id="centro_electoral" placeholder="Centro Electoral">
+    <input type="text" id="mesa" placeholder="Mesa">
+    <input type="text" id="direccion_vivienda" placeholder="Dirección">
+    <input type="text" id="numero_telefonico" placeholder="Teléfono">
+    <input type="text" id="candidato" placeholder="Candidato">
+    <input type="number" id="edad" placeholder="Edad">
     <button onclick="enviarVoto()">Enviar Voto</button>
+    <p id="status-voto"></p>
 
     <script>
+        const API_URL = "https://exitpoll-v2-produccion.onrender.com";
         let token = "";
 
-        async function login() {
-            const res = await fetch("https://exitpoll-v2-produccion.onrender.com/login", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username: document.getElementById('user').value, password: document.getElementById('pass').value})
-            });
-            const data = await res.json();
-            token = data.access_token;
-            alert("Login exitoso");
+        async function obtenerToken() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    document.getElementById("status-login").innerText = "✅ Autenticado";
+                } else {
+                    document.getElementById("status-login").innerText = "❌ Error en credenciales";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
         }
 
         async function enviarVoto() {
-            const data = { /* recoge tus campos aquí */ };
-            const res = await fetch("https://exitpoll-v2-produccion.onrender.com/voto", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify(data)
-            });
-            alert(res.ok ? "Voto registrado" : "Error en el voto");
+            if (!token) {
+                alert("Primero debes iniciar sesión");
+                return;
+            }
+
+            const votoData = {
+                nombre: document.getElementById("nombre").value,
+                apellido: document.getElementById("apellido").value,
+                cedula: document.getElementById("cedula").value,
+                centro_electoral: document.getElementById("centro_electoral").value,
+                mesa: document.getElementById("mesa").value,
+                direccion_vivienda: document.getElementById("direccion_vivienda").value,
+                numero_telefonico: document.getElementById("numero_telefonico").value,
+                candidato: document.getElementById("candidato").value,
+                edad: parseInt(document.getElementById("edad").value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/voto`, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}` 
+                    },
+                    body: JSON.stringify(votoData)
+                });
+
+                if (response.ok) {
+                    document.getElementById("status-voto").innerText = "✅ Voto registrado";
+                } else {
+                    document.getElementById("status-voto").innerText = "❌ Error al enviar voto";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
         }
     </script>
 </body>
