@@ -3,13 +3,22 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-# Asegúrate de usar la variable de entorno para la URL
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL")
+# Obtenemos la URL
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Es vital añadir "?sslmode=require" si es una base de datos externa como la de Render
-if not SQLALCHEMY_DATABASE_URL.endswith("?sslmode=require"):
-    SQLALCHEMY_DATABASE_URL += "?sslmode=require"
+# Si la URL no termina en ?sslmode=require, se lo añadimos
+if DATABASE_URL and "?sslmode=require" not in DATABASE_URL:
+    DATABASE_URL += "?sslmode=require"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Configuración del motor con reintentos
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"sslmode": "require"},
+    pool_pre_ping=True,  # Verifica la conexión antes de usarla
+    pool_recycle=300,    # Recicla conexiones viejas
+    pool_size=5,         # Tamaño del pool para instancias pequeñas
+    max_overflow=2
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

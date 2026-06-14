@@ -2,16 +2,26 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from contextlib import asynccontextmanager
 from database import engine, SessionLocal, Base
 from auth import hash_password, verify_password, create_access_token, get_current_user
 from models import Usuario, VotoDB
 
-# Inicialización de tablas
-Base.metadata.create_all(bind=engine)
+# --- GESTIÓN DE ARRANQUE PARA LA BASE DE DATOS ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Esto asegura que la conexión se intente cuando el servidor ya esté listo
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Base de datos y tablas inicializadas correctamente.")
+    except Exception as e:
+        print(f"Error crítico al iniciar la base de datos: {e}")
+    yield
+    # Código de limpieza al apagar (si fuera necesario)
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
-# Configuración CORS para que tu index.html local pueda hablar con el servidor
+# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Esquemas Pydantic para recibir los datos desde el frontend
+# Esquemas Pydantic
 class LoginSchema(BaseModel):
     username: str
     password: str
@@ -44,7 +54,7 @@ def get_db():
     finally:
         db.close()
 
-# RUTA LOGIN (Acepta JSON como tu index.html espera)
+# RUTA LOGIN
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
