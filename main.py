@@ -8,13 +8,14 @@ from models import Usuario, VotoDB
 
 app = FastAPI()
 
-# Configuración completa de CORS para permitir conexiones externas
+# Configuración forzada y explícita
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 class LoginSchema(BaseModel):
