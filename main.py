@@ -29,17 +29,16 @@ def reset_admin(db: Session = Depends(get_db)):
         db.query(Usuario).delete()
         db.commit()
         
-        # Usar una cadena extremadamente corta y simple para evitar límites de bcrypt
-        raw_password = "123" 
+        # Guardamos la contraseña en texto plano temporalmente para descartar errores de hashing
+        raw_password = "123"
         
-        # Crear admin con contraseña hasheada
-        nuevo_user = Usuario(username="admin", password=get_password_hash(raw_password))
+        # Creamos el usuario sin pasar por get_password_hash
+        nuevo_user = Usuario(username="admin", password=raw_password)
         db.add(nuevo_user)
         db.commit()
         
-        return {"mensaje": "Base de datos inicializada. Usuario: admin, Password: 123"}
+        return {"mensaje": "Base de datos inicializada sin hashing. Usuario: admin, Password: 123"}
     except Exception as e:
-        # Devolvemos el error con la representación completa para ver qué sucede
         return {"error_detallado": str(e)}
 
 @app.get("/")
@@ -61,7 +60,9 @@ class LoginSchema(BaseModel):
 @app.post("/login")
 def login(data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(Usuario).filter(Usuario.username == data.username).first()
-    if not user or not verify_password(data.password, user.password):
+    # Nota: Aquí verify_password podría fallar porque guardamos el pass en plano, 
+    # pero esto nos confirma si el error de los 72 bytes era efectivamente get_password_hash
+    if not user or (data.password != user.password):
         raise HTTPException(status_code=400, detail="Credenciales incorrectas")
     token = create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
