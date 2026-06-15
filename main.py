@@ -1,10 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
-from database import SessionLocal
+from database import SessionLocal, engine, Base
 from auth import verify_password, create_access_token, get_current_user, get_password_hash
 from models import Usuario, VotoDB
+
+# Asegurar que las tablas existan al arrancar
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -18,12 +22,18 @@ def get_db():
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
     try:
+        # Forzamos la creación por si acaso
+        Base.metadata.create_all(bind=engine)
+        
+        # Eliminamos registros previos
         db.query(Usuario).delete()
         db.commit()
+        
+        # Creamos admin
         nuevo_user = Usuario(username="admin", password=get_password_hash("123456"))
         db.add(nuevo_user)
         db.commit()
-        return {"mensaje": "Base de datos reseteada. Usuario: admin, Password: 123456"}
+        return {"mensaje": "Base de datos inicializada. Usuario: admin, Password: 123456"}
     except Exception as e:
         return {"error_detallado": str(e)}
 
