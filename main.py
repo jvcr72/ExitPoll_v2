@@ -22,17 +22,22 @@ def get_db():
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
     try:
-        # Forzamos la creación por si acaso
+        # Asegurar creación de tablas
         Base.metadata.create_all(bind=engine)
         
-        # Eliminamos registros previos
+        # Eliminar registros previos
         db.query(Usuario).delete()
         db.commit()
         
-        # Creamos admin
-        nuevo_user = Usuario(username="admin", password=get_password_hash("123456"))
+        # Corrección: Truncar contraseña a 72 bytes para evitar error de bcrypt
+        raw_password = "123456"
+        safe_password = raw_password[:72] 
+        
+        # Crear admin con contraseña segura
+        nuevo_user = Usuario(username="admin", password=get_password_hash(safe_password))
         db.add(nuevo_user)
         db.commit()
+        
         return {"mensaje": "Base de datos inicializada. Usuario: admin, Password: 123456"}
     except Exception as e:
         return {"error_detallado": str(e)}
