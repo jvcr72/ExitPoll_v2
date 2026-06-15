@@ -2,15 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import os
 from database import SessionLocal
 from auth import verify_password, create_access_token, get_current_user, get_password_hash
 from models import Usuario, VotoDB
-
-# --- DIAGNÓSTICO DE ESTRUCTURA ---
-print("DIRECTORIO ACTUAL:", os.getcwd())
-print("ARCHIVOS EN EL DIRECTORIO:", os.listdir())
-# ---------------------------------
 
 app = FastAPI()
 
@@ -44,10 +38,6 @@ def ver_usuarios(db: Session = Depends(get_db)):
         return [{"username": u.username} for u in usuarios]
     except Exception as e:
         return {"error": str(e)}
-
-@app.get("/api/v1/salud")
-def check_salud():
-    return {"status": "conectado"}
 
 class LoginSchema(BaseModel):
     username: str
