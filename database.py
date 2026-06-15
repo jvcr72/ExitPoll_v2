@@ -5,6 +5,11 @@ import os
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Se desactiva el SSL en los parámetros de conexión para evitar el cierre inesperado
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"sslmode": "disable"}
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
