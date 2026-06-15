@@ -29,17 +29,17 @@ def reset_admin(db: Session = Depends(get_db)):
         db.query(Usuario).delete()
         db.commit()
         
-        # Corrección: Truncar contraseña a 72 bytes para evitar error de bcrypt
-        raw_password = "123456"
-        safe_password = raw_password[:72] 
+        # Usar una cadena extremadamente corta y simple para evitar límites de bcrypt
+        raw_password = "123" 
         
-        # Crear admin con contraseña segura
-        nuevo_user = Usuario(username="admin", password=get_password_hash(safe_password))
+        # Crear admin con contraseña hasheada
+        nuevo_user = Usuario(username="admin", password=get_password_hash(raw_password))
         db.add(nuevo_user)
         db.commit()
         
-        return {"mensaje": "Base de datos inicializada. Usuario: admin, Password: 123456"}
+        return {"mensaje": "Base de datos inicializada. Usuario: admin, Password: 123"}
     except Exception as e:
+        # Devolvemos el error con la representación completa para ver qué sucede
         return {"error_detallado": str(e)}
 
 @app.get("/")
