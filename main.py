@@ -6,7 +6,6 @@ from database import SessionLocal, engine, Base
 from auth import verify_password, create_access_token, get_current_user, get_password_hash
 from models import Usuario, VotoDB
 
-# Asegurar que las tablas existan al arrancar
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -21,14 +20,11 @@ def get_db():
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
     try:
-        # Asegurar creación de tablas
         Base.metadata.create_all(bind=engine)
-        
-        # Eliminar registros previos
         db.query(Usuario).delete()
         db.commit()
         
-        # Ahora usamos get_password_hash correctamente
+        # Uso de hash seguro con la función corregida
         password_final = "123456"
         nuevo_user = Usuario(username="admin", password=get_password_hash(password_final))
         db.add(nuevo_user)
