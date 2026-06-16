@@ -1,13 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from database import SessionLocal, engine, Base
-from auth import verify_password, create_access_token, get_current_user, get_password_hash
+from auth import get_password_hash, verify_password, create_access_token, get_current_user
 from models import Usuario, VotoDB
+from pydantic import BaseModel
 
 Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
 def get_db():
@@ -20,32 +18,16 @@ def get_db():
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
     try:
-        Base.metadata.create_all(bind=engine)
         db.query(Usuario).delete()
         db.commit()
-        
-        # Uso de hash seguro con la función corregida
-        password_final = "123456"
-        nuevo_user = Usuario(username="admin", password=get_password_hash(password_final))
+        nuevo_user = Usuario(username="admin", password=get_password_hash("123456"))
         db.add(nuevo_user)
         db.commit()
-        
-        return {"mensaje": "Base de datos inicializada correctamente. Usuario: admin"}
-    except Exception as e:
-        return {"error_detallado": str(e)}
-
-@app.get("/")
-def read_root():
-    return FileResponse("index.html")
-
-@app.get("/ver-usuarios")
-def ver_usuarios(db: Session = Depends(get_db)):
-    try:
-        usuarios = db.query(Usuario).all()
-        return [{"username": u.username} for u in usuarios]
+        return {"mensaje": "Base de datos inicializada con SHA-256"}
     except Exception as e:
         return {"error": str(e)}
 
+# Login actualizado para usar la nueva verificación
 class LoginSchema(BaseModel):
     username: str
     password: str
@@ -57,21 +39,3 @@ def login(data: LoginSchema, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Credenciales incorrectas")
     token = create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
-
-class VotoSchema(BaseModel):
-    nombre: str
-    apellido: str
-    cedula: str
-    centro_electoral: str
-    mesa: str
-    direccion_vivienda: str
-    numero_telefonico: str
-    candidato: str
-    edad: int
-
-@app.post("/voto")
-def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
-    nuevo_voto = VotoDB(**voto.model_dump())
-    db.add(nuevo_voto)
-    db.commit()
-    return {"mensaje": "Voto registrado con éxito"}
