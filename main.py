@@ -5,8 +5,7 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 from models import Usuario, VotoDB
 from pydantic import BaseModel
 
-# Forzar eliminación y recreación limpia
-Base.metadata.drop_all(bind=engine)
+# YA NO BORRAMOS LA BD AQUÍ. Se mantiene la estructura.
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -20,14 +19,39 @@ def get_db():
 
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
-    try:
-        db.query(Usuario).delete()
-        nuevo_user = Usuario(username="admin", password_hash=get_password_hash("123456"))
-        db.add(nuevo_user)
-        db.commit()
-        return {"mensaje": "Reseteo exitoso con SHA-256 limpio"}
-    except Exception as e:
-        return {"error_critico": str(e)}
+    # Solo resetea si realmente necesitas borrar y recrear al admin
+    db.query(Usuario).delete()
+    nuevo_user = Usuario(username="admin", password_hash=get_password_hash("123456"))
+    db.add(nuevo_user)
+    db.commit()
+    return {"mensaje": "Reseteo exitoso con SHA-256"}
 
-# ... resto de tus endpoints (voto, login) ...
-# Asegúrate de usar 'password_hash' al validar en el login
+class LoginSchema(BaseModel):
+    username: str
+    password: str
+
+@app.post("/login")
+def login(data: LoginSchema, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.username == data.username).first()
+    if not user or not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Credenciales incorrectas")
+    token = create_access_token(data={"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+class VotoSchema(BaseModel):
+    nombre: str
+    apellido: str
+    cedula: str
+    centro_electoral: str
+    mesa: str
+    direccion_vivienda: str
+    numero_telefonico: str
+    candidato: str
+    edad: int
+
+@app.post("/voto")
+def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+    nuevo_voto = VotoDB(**voto.model_dump())
+    db.add(nuevo_voto)
+    db.commit()
+    return {"mensaje": "Voto registrado con éxito"}
