@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
-SECRET_KEY = "tu_clave_secreta_aqui"
+SECRET_KEY = "clave_secreta_segura"
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def get_password_hash(password: str) -> str:
-    # Usamos SHA-256 nativo, no tiene límite de 72 bytes
+    # SHA-256 nativo, sin restricciones de 72 bytes
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
