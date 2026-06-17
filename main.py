@@ -17,12 +17,20 @@ def get_db():
         db.close()
 
 # --- ENDPOINTS GET ---
+
+@app.get("/")
+def read_root():
+    """Ruta raíz para que Render no muestre error 404"""
+    return {"mensaje": "API de ExitPoll operativa"}
+
 @app.get("/api/v1/salud")
 def salud():
+    """Endpoint para monitoreo de Render"""
     return {"status": "ok"}
 
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
+    """Resetea el usuario administrador"""
     db.query(Usuario).delete()
     nuevo_user = Usuario(username="admin", password_hash=get_password_hash("123456"))
     db.add(nuevo_user)
@@ -31,9 +39,11 @@ def reset_admin(db: Session = Depends(get_db)):
 
 @app.get("/ver-votos")
 def listar_votos(db: Session = Depends(get_db)):
+    """Consulta todos los votos registrados"""
     return db.query(VotoDB).all()
 
 # --- ENDPOINTS POST ---
+
 class LoginSchema(BaseModel):
     username: str
     password: str
