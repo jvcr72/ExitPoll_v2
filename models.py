@@ -5,7 +5,7 @@ class Usuario(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    password = Column(String)
+    password_hash = Column(String(255)) # Nombre nuevo para evitar caché de BD
 
 class CentroDeVotacion(Base):
     __tablename__ = "centros_de_votacion"
@@ -14,7 +14,7 @@ class CentroDeVotacion(Base):
     direccion = Column(String)
     codigo_centro = Column(String, unique=True)
 
-class Skippin(Base): # He corregido el nombre de la clase según lo solicitado
+class Skippin(Base):
     __tablename__ = "skippines"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String)
