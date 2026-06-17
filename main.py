@@ -5,7 +5,6 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 from models import Usuario, VotoDB
 from pydantic import BaseModel
 
-# YA NO BORRAMOS LA BD AQUÍ. Se mantiene la estructura.
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -17,15 +16,24 @@ def get_db():
     finally:
         db.close()
 
+# --- ENDPOINTS GET ---
+@app.get("/api/v1/salud")
+def salud():
+    return {"status": "ok"}
+
 @app.get("/reset-admin")
 def reset_admin(db: Session = Depends(get_db)):
-    # Solo resetea si realmente necesitas borrar y recrear al admin
     db.query(Usuario).delete()
     nuevo_user = Usuario(username="admin", password_hash=get_password_hash("123456"))
     db.add(nuevo_user)
     db.commit()
-    return {"mensaje": "Reseteo exitoso con SHA-256"}
+    return {"mensaje": "Reseteo exitoso"}
 
+@app.get("/ver-votos")
+def listar_votos(db: Session = Depends(get_db)):
+    return db.query(VotoDB).all()
+
+# --- ENDPOINTS POST ---
 class LoginSchema(BaseModel):
     username: str
     password: str
