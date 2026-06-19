@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from .models import Censo # Asegúrate de importar tu modelo
-from .database import get_db # Asegúrate de importar tu conexión
+from models import Censo
+from database import get_db
 
 app = FastAPI()
 
@@ -23,6 +23,7 @@ def buscar_persona(cedula: str, db: Session = Depends(get_db)):
 @app.get("/obtener-centros")
 def obtener_centros(db: Session = Depends(get_db)):
     centros = db.query(Censo.centro_electoral).distinct().all()
+    # Retorna solo los nombres de los centros
     return [c[0] for c in centros]
 
 # 3. Datos para el Centro de Totalización
@@ -42,3 +43,17 @@ def obtener_totalizacion(db: Session = Depends(get_db)):
         "faltan_por_votar": total_censo - len(votos_emitidos),
         "por_candidato": conteo
     }
+
+# 4. Registro de Voto (Endpoint adicional necesario para completar el flujo)
+@app.post("/registrar-voto")
+def registrar_voto(cedula: str, candidato: str, db: Session = Depends(get_db)):
+    persona = db.query(Censo).filter(Censo.cedula == cedula).first()
+    if not persona:
+        raise HTTPException(status_code=404, detail="Cédula no encontrada")
+    if persona.voto_registrado:
+        raise HTTPException(status_code=400, detail="Voto duplicado")
+    
+    persona.voto_registrado = True
+    persona.candidato_votado = candidato
+    db.commit()
+    return {"message": "Voto registrado exitosamente"}
