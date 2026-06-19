@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from database import Base
 
 class Usuario(Base):
@@ -26,10 +26,12 @@ class VotoDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String)
     apellido = Column(String)
-    cedula = Column(String)
+    cedula = Column(String, unique=True, index=True)
     centro_electoral = Column(String)
     mesa = Column(String)
     direccion_vivienda = Column(String)
     numero_telefonico = Column(String)
-    candidato = Column(String)
+    candidato = Column(String, nullable=True)
     edad = Column(Integer)
+    # CAMBIO CRÍTICO: Agregamos este campo para el bloqueo
+    voto_registrado = Column(Boolean, default=False)
