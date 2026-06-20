@@ -1,12 +1,44 @@
+import os
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from models import VotoDB
-from database import get_db, engine, Base
+from database import get_db, engine, Base, DATABASE_URL
 import secrets
 
-Base.metadata.create_all(bind=engine)
-app = FastAPI()
+# Configurar logs de inicio
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("ExitPoll_App")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Verificación y creación de directorios para SQLite en producción (Render)
+    if DATABASE_URL.startswith("sqlite"):
+        # Extraer ruta limpia
+        db_path = DATABASE_URL.replace("sqlite:///", "")
+        if DATABASE_URL.startswith("sqlite:////"):
+            db_path = DATABASE_URL.replace("sqlite:////", "/")
+            
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            try:
+                os.makedirs(db_dir, exist_ok=True)
+                logger.info(f"Directorio de base de datos SQLite creado en: {db_dir}")
+            except Exception as e:
+                logger.error(f"No se pudo crear el directorio para SQLite {db_dir}: {e}")
+
+    # Inicializar tablas de forma segura en el inicio de la app ASGI
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Tablas de base de datos creadas/verificadas exitosamente.")
+    except Exception as e:
+        logger.error(f"Fallo al inicializar tablas en el arranque: {e}")
+        
+    yield
+
+app = FastAPI(lifespan=lifespan)
 security = HTTPBasic()
 
 # Función de normalización para asegurar que los centros se unan correctamente
