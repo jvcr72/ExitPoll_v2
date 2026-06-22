@@ -1,12 +1,14 @@
 import os
 from supabase import create_client, Client
 
-# Obtenemos las variables de entorno configuradas en el panel de Render
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+# Obtenemos las variables
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
 
-# Inicializamos el cliente de Supabase
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Las variables SUPABASE_URL y SUPABASE_KEY no están configuradas.")
+# Validación estricta
+if not url:
+    raise Exception("ERROR: La variable SUPABASE_URL no está definida en Render")
+if not key:
+    raise Exception("ERROR: La variable SUPABASE_KEY no está definida en Render")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase: Client = create_client(url, key)
