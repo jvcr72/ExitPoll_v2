@@ -1,12 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from sqlalchemy.orm import Session
-from models import VotoDB
-from database import get_db, engine, Base
+from database import supabase
 import secrets
-
-# Inicializamos la base de datos
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 security = HTTPBasic()
@@ -22,8 +17,19 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
-# --- Aquí irían tus endpoints ---
-# Ejemplo de cómo usar get_db en tus rutas:
-# @app.post("/voto")
-# def registrar_voto(voto: VotoSchema, db: Session = Depends(get_db)):
-#     ...
+# Endpoint de ejemplo para registrar votos
+@app.post("/voto")
+def registrar_voto(nombre: str, opcion: str):
+    try:
+        response = supabase.table("votos").insert({
+            "nombre": nombre, 
+            "opcion": opcion
+        }).execute()
+        return {"status": "success", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Endpoint básico para verificar que la app está viva
+@app.get("/")
+def read_root():
+    return {"message": "API de ExitPoll activa y conectada a Supabase REST"}

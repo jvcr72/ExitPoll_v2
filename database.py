@@ -1,24 +1,12 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from supabase import create_client, Client
 
-# Se obtiene la URL desde el entorno de Render (con puerto 6543)
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+# Obtenemos las variables de entorno configuradas en el panel de Render
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# Para el puerto 6543, es obligatorio habilitar el modo SSL en la conexión
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"sslmode": "require"}, 
-    pool_pre_ping=True
-)
+# Inicializamos el cliente de Supabase
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("Las variables SUPABASE_URL y SUPABASE_KEY no están configuradas.")
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
