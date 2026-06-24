@@ -21,7 +21,7 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
 @app.post("/voto")
 def registrar_voto(nombre: str, opcion: str):
     try:
-        response = supabase.table("votos").insert({
+        response = supabase.table("Votos").insert({
             "nombre": nombre, 
             "opcion": opcion
         }).execute()
