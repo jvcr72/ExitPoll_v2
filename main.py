@@ -1,26 +1,31 @@
 from fastapi import FastAPI, HTTPException
-from database import supabase
+from pydantic import BaseModel
+from supabase import create_client
+import os
 
-app = FastAPI()
+# Configuración (Usa variables de entorno por seguridad)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@app.post("/voto")
-def registrar_voto(nombre: str, opcion: str):
+app = FastAPI(title="API ExitPoll v2")
+
+# Definición de modelo para validación de datos
+class Voto(BaseModel):
+    nombre: str
+    opcion: str
+
+@app.post("/voto", status_code=201)
+def registrar_voto(voto: Voto):
     try:
-        # Usamos el nombre de tabla exacto: "Votos"
-        data = {
-            "nombre": nombre,
-            "opcion": opcion
-        }
-        
-        # Ejecutamos la inserción
-        response = supabase.table("Votos").insert(data).execute()
-        
-        return {"message": "Voto registrado con éxito", "data": response.data}
-    
+        # Usamos la vista de bypass creada anteriormente
+        response = supabase.table("votos_api").insert(voto.dict()).execute()
+        return {"status": "success", "data": response.data}
     except Exception as e:
-        # Si algo falla, el error nos dirá exactamente por qué
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log técnico para depuración
+        print(f"Error en inserción: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al procesar el voto en la base de datos")
 
-@app.get("/")
-def read_root():
-    return {"message": "API de Votación Activa"}
+@app.get("/health")
+def health_check():
+    return {"status": "online"}
