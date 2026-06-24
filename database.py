@@ -1,16 +1,15 @@
 import os
 from supabase import create_client, Client
 
+# Obtenemos las variables
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
-# Creamos las opciones para el cliente incluyendo el header de autenticación
-options = {
-    "headers": {
-        "apikey": key,
-        "Authorization": f"Bearer {key}"
-    }
-}
+# Validación preventiva: 
+# Si faltan las variables, es mejor que el servidor falle al iniciar 
+# (con un mensaje claro) que intentar funcionar sin conexión.
+if not url or not key:
+    raise ValueError("Error crítico: SUPABASE_URL o SUPABASE_KEY no están definidas en el entorno.")
 
-# Inicializamos el cliente pasando las opciones
-supabase: Client = create_client(url, key, options)
+# Inicialización estándar
+supabase: Client = create_client(url, key)
