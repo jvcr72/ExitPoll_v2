@@ -1,14 +1,11 @@
 import os
 from supabase import create_client, Client
 
-# Obtenemos las variables
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
-# Validación estricta
-if not url:
-    raise Exception("ERROR: La variable SUPABASE_URL no está definida en Render")
-if not key:
-    raise Exception("ERROR: La variable SUPABASE_KEY no está definida en Render")
+print(f"DEBUG: URL cargada: {url}")
+# Imprimimos solo los primeros 5 caracteres de la key para no exponerla toda
+print(f"DEBUG: Key cargada: {key[:5]}...") 
 
 supabase: Client = create_client(url, key)
